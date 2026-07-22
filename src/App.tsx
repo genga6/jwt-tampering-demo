@@ -1,28 +1,25 @@
-import { Hs256Demo } from "./components/Hs256Demo.js"
-import { Rs256Demo } from "./components/Rs256Demo.js"
-import { TamperDemo } from "./components/TamperDemo.js"
+import { JwtDemo } from "./components/JwtDemo.js"
 
 export function App() {
   return (
     <div className="min-h-screen bg-slate-950 text-slate-100">
       <div className="mx-auto max-w-4xl px-5 py-10">
-        <header className="mb-10">
+        <header className="mb-8">
           <h1 className="text-3xl font-bold tracking-tight">JWT 改ざんデモ</h1>
           <p className="mt-3 max-w-2xl text-slate-400">
-            JWT の payload は Base64url でエンコードされているだけ(暗号化ではない)。
-            署名がなければ誰でも書き換えられる一方、JOSE による署名を付けると改ざんが検出できる。 3
-            つのデモでその違いをブラウザ上(Web Crypto)で確認する。
+            JWT の payload は Base64url でエンコードされているだけ（暗号化ではない）。
+            同じ改ざん（role: user → admin）を、サーバーの署名方式ごとに検証すると、
+            署名なし（alg:none）では改ざんが素通りし、JOSE
+            による署名では検出できる。方式を切り替えて違いを確認する。
           </p>
         </header>
 
-        <main className="space-y-8">
-          <TamperDemo />
-          <Hs256Demo />
-          <Rs256Demo />
+        <main>
+          <JwtDemo />
         </main>
 
         <footer className="mt-12 border-t border-slate-800 pt-6 text-sm text-slate-500">
-          署名/検証は{" "}
+          署名/検証/鍵生成は{" "}
           <a
             href="https://github.com/panva/jose"
             className="text-indigo-400 hover:underline"

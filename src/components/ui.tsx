@@ -10,9 +10,33 @@ export function StatusBadge({ ok, children }: { ok: boolean; children: ReactNode
     <span
       className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-sm font-medium ring-1 ${cls}`}
     >
-      <span aria-hidden>{ok ? "✅" : "❌"}</span>
+      <span aria-hidden>{ok ? "〇" : "×"}</span>
       {children}
     </span>
+  )
+}
+
+/** 丸数字付きのステップ見出し(各デモ共通)。 */
+export function StepLabel({ n, children }: { n: string; children: ReactNode }) {
+  return (
+    <span className="text-xs font-semibold uppercase tracking-wide text-slate-400">
+      <span className="mr-1.5 text-indigo-300">{n}</span>
+      {children}
+    </span>
+  )
+}
+
+/** 「対象名 … 判定バッジ」を1行で並べる、検証結果セクション用の行。 */
+export function VerdictRow({
+  label,
+  ok,
+  children,
+}: { label: string; ok: boolean; children: ReactNode }) {
+  return (
+    <div className="flex flex-wrap items-center justify-between gap-2 p-3">
+      <span className="text-sm text-slate-300">{label}</span>
+      <StatusBadge ok={ok}>{children}</StatusBadge>
+    </div>
   )
 }
 
