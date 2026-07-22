@@ -85,11 +85,11 @@ export function TamperDemo() {
 
       <div className="mt-5 flex flex-wrap items-center gap-3 border-t border-slate-700/60 pt-4">
         {decodedRole === "admin" ? (
-          <StatusBadge ok={false}>
-            検証なしサーバは role=admin を受理 → 権限昇格が成立
-          </StatusBadge>
+          <StatusBadge ok={false}>検証なしサーバは role=admin を受理 → 権限昇格が成立</StatusBadge>
         ) : (
-          <StatusBadge ok>現在 role={String(decodedRole)} — 「admin に昇格」を押してみて</StatusBadge>
+          <StatusBadge ok>
+            現在 role={String(decodedRole)} — 「admin に昇格」を押してみて
+          </StatusBadge>
         )}
         <span className="text-sm text-slate-400">
           教訓: 署名を検証せず payload を信用してはいけない。

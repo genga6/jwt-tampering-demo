@@ -11,11 +11,12 @@
 
 import {
   type JWTPayload,
+  type KeyLike,
   SignJWT,
-  errors as joseErrors,
   exportPKCS8,
   exportSPKI,
   generateKeyPair,
+  errors as joseErrors,
   jwtVerify,
 } from "jose"
 
@@ -50,8 +51,8 @@ export async function verifyHS256(token: string, secret: string): Promise<Verify
 }
 
 export interface RsaKeyPair {
-  publicKey: CryptoKey
-  privateKey: CryptoKey
+  publicKey: KeyLike
+  privateKey: KeyLike
   /** 表示用: PEM 形式の公開鍵(SPKI)。 */
   publicPem: string
   /** 表示用: PEM 形式の秘密鍵(PKCS#8)。 */
@@ -69,7 +70,7 @@ export async function generateRs256KeyPair(): Promise<RsaKeyPair> {
 }
 
 /** RS256(秘密鍵)でトークンに署名する。 */
-export async function signRS256(payload: JWTPayload, privateKey: CryptoKey): Promise<string> {
+export async function signRS256(payload: JWTPayload, privateKey: KeyLike): Promise<string> {
   return new SignJWT(payload)
     .setProtectedHeader({ alg: "RS256", typ: "JWT" })
     .setIssuedAt()
@@ -77,7 +78,7 @@ export async function signRS256(payload: JWTPayload, privateKey: CryptoKey): Pro
 }
 
 /** RS256(公開鍵)でトークンを検証する。改ざん時は valid:false を返す。 */
-export async function verifyRS256(token: string, publicKey: CryptoKey): Promise<VerifyResult> {
+export async function verifyRS256(token: string, publicKey: KeyLike): Promise<VerifyResult> {
   try {
     const { payload, protectedHeader } = await jwtVerify(token, publicKey)
     return { valid: true, payload, header: protectedHeader }
