@@ -83,9 +83,9 @@ export function Button({
   disabled?: boolean
 }) {
   const tones = {
-    default: "bg-slate-700 hover:bg-slate-600 text-slate-100",
-    danger: "bg-rose-600 hover:bg-rose-500 text-white",
-    primary: "bg-indigo-600 hover:bg-indigo-500 text-white",
+    default: "bg-slate-700/70 hover:bg-slate-600/80 text-slate-100",
+    danger: "bg-rose-500/75 hover:bg-rose-500/90 text-rose-50",
+    primary: "bg-indigo-500/75 hover:bg-indigo-500/90 text-indigo-50",
   }
   return (
     <button
