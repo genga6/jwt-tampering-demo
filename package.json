@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "type": "module",
+  "packageManager": "pnpm@11.9.0",
   "description": "署名なしJWT(Base64urlのみ)の改ざん可能性と、JOSEによる署名/鍵での防御を画面上で検証するデモ",
   "scripts": {
     "dev": "vite",
