@@ -1,5 +1,9 @@
 # jwt-tampering-demo
 
+**🔗 ライブデモ: https://genga6.github.io/jwt-tampering-demo/**
+
+[![Deploy to GitHub Pages](https://github.com/genga6/jwt-tampering-demo/actions/workflows/deploy.yml/badge.svg)](https://github.com/genga6/jwt-tampering-demo/actions/workflows/deploy.yml)
+
 JWT の payload が **Base64url でエンコードされているだけ（暗号化ではない）** ことを実演し、
 JOSE（[jose](https://github.com/panva/jose)）による署名で改ざんを検出できることをブラウザ上で確認するデモ。
 
