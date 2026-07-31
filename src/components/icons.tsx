@@ -152,6 +152,71 @@ export function IconCross({ size }: IconProps) {
   )
 }
 
+/** 中身を覗く。 */
+export function IconMagnifier({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <circle cx="10.5" cy="10.5" r="6.2" />
+      <path d="M15.2 15.2 21 21" />
+      <path d="M8 10.5h5" />
+    </Icon>
+  )
+}
+
+/** 入口のゲート。腕が下りていて通れない。 */
+export function IconGate({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <rect x="2.8" y="8.5" width="4" height="12" rx="1.2" />
+      <rect x="17.2" y="8.5" width="4" height="12" rx="1.2" />
+      <path d="M7.4 12.5h9.2" strokeWidth={2.6} />
+    </Icon>
+  )
+}
+
+/** 入口のゲート。腕が上がって通れてしまう。 */
+export function IconGateOpen({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <rect x="2.8" y="8.5" width="4" height="12" rx="1.2" />
+      <rect x="17.2" y="8.5" width="4" height="12" rx="1.2" />
+      <path d="M7.6 11.8 15.4 4.2" strokeWidth={2.6} />
+    </Icon>
+  )
+}
+
+export function IconPlay({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <path d="M8 5.4v13.2l10-6.6-10-6.6Z" fill="currentColor" />
+    </Icon>
+  )
+}
+
+export function IconPause({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <path d="M9 5v14M15 5v14" strokeWidth={2.4} />
+    </Icon>
+  )
+}
+
+export function IconPrev({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <path d="M14.5 6.5 9 12l5.5 5.5" strokeWidth={2.2} />
+    </Icon>
+  )
+}
+
+export function IconNext({ size }: IconProps) {
+  return (
+    <Icon size={size}>
+      <path d="M9.5 6.5 15 12l-5.5 5.5" strokeWidth={2.2} />
+    </Icon>
+  )
+}
+
 /** 作り直す。 */
 export function IconReset({ size }: IconProps) {
   return (

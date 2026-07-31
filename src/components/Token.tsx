@@ -10,7 +10,83 @@
  */
 
 import type { JwtClaims } from "../lib/jwt.js"
-import { IconEye, IconSeal, IconSealBroken } from "./icons.js"
+import { IconEye, IconMagnifier, IconPen, IconSeal, IconSealBroken } from "./icons.js"
+
+/**
+ * 盤面を渡っていく券。
+ *
+ * 盤の上では base64 の文字列は読ませない（読ませても分からない）。券に書いてあることを
+ * そのまま出す ── 誰の券で、どの権限で、封がされているか。文字列そのものは盤の下の
+ * 「トークンの中身を全部見る」に置いてある。
+ */
+export function MiniTicket({
+  claims,
+  alg,
+  sealed,
+  tampered = false,
+  reading = false,
+}: {
+  claims: JwtClaims
+  alg: string
+  /** 署名が付いているか。 */
+  sealed: boolean
+  /** payload が書き換えられた後の券。 */
+  tampered?: boolean
+  /** いま攻撃者に読まれている。 */
+  reading?: boolean
+}) {
+  return (
+    <div
+      className={`relative w-[9.5rem] rounded-xl border-[1.5px] bg-card sm:w-[13rem] ${
+        tampered
+          ? "border-alarm shadow-[0_2px_0_var(--color-alarm)]"
+          : "border-line shadow-[0_2px_0_var(--color-line)]"
+      } ${reading ? "outline-2 outline-offset-2 outline-accent" : ""}`}
+    >
+      {reading && (
+        <span className="absolute -top-3 -left-3 flex size-6 items-center justify-center rounded-full border-[1.5px] border-accent bg-card text-accent">
+          <IconMagnifier size={14} />
+        </span>
+      )}
+      {tampered && (
+        <span className="absolute -top-3 -left-3 flex size-6 items-center justify-center rounded-full border-[1.5px] border-alarm bg-card text-alarm">
+          <IconPen size={13} />
+        </span>
+      )}
+
+      <div className="flex items-baseline justify-between gap-1 rounded-t-[10px] bg-accent-soft/60 px-2 py-1">
+        <span className="text-[10px] font-bold tracking-wider text-accent-deep uppercase">jwt</span>
+        <span className="truncate font-mono text-[10px] text-accent-deep">{alg}</span>
+      </div>
+
+      <dl className="grid grid-cols-[auto_minmax(0,1fr)] gap-x-2 px-2 py-1.5 text-[11px]">
+        <dt className="text-ink-faint">name</dt>
+        <dd className="truncate font-mono text-ink-soft">{String(claims.name ?? "—")}</dd>
+        <dt className={tampered ? "font-bold text-alarm" : "text-ink-faint"}>role</dt>
+        <dd
+          className={`truncate rounded px-1 font-mono ${
+            tampered ? "patched bg-alarm/12 font-bold text-alarm" : "text-ink-soft"
+          }`}
+        >
+          {String(claims.role ?? "—")}
+        </dd>
+      </dl>
+
+      <div
+        className={`flex items-center gap-1.5 rounded-b-[10px] border-t-[1.5px] border-dashed px-2 py-1 text-[10px] font-bold ${
+          sealed
+            ? tampered
+              ? "border-alarm/40 bg-alarm-soft/60 text-alarm"
+              : "border-safe/40 bg-safe-soft/60 text-safe"
+            : "border-line bg-paper text-ink-faint"
+        }`}
+      >
+        {sealed && !tampered ? <IconSeal size={13} /> : <IconSealBroken size={13} />}
+        {sealed ? (tampered ? "封は発行時のまま" : "封あり") : "封なし"}
+      </div>
+    </div>
+  )
+}
 
 /** 半券 1 段。 */
 function Stub({

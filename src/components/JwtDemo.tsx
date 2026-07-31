@@ -9,9 +9,9 @@
  * 署名/検証/鍵生成はすべてブラウザの Web Crypto 上(jose)で実行する。
  *
  * 画面は 3 段:
- *   ステータスバー … いまの結末だけを 1 行で
- *   盤面 ＋ 設定    … 見る場所と、いじる場所を隣に置く
- *   要点            … いま選んでいる方式について言えること
+ *   ステータスバー   … いまの結末だけを 1 行で
+ *   盤面 ＋ 設定     … 券が渡っていく様子と、いじる場所を隣に置く
+ *   結果 ＋ 要点     … 2 枚を照合した判定と、この方式について言えること
  */
 import { useEffect, useState } from "react"
 import {
@@ -25,7 +25,8 @@ import {
 import { buildUnsignedToken, tamperClaims } from "../lib/jwt.js"
 import { MODE_COPY, type Mode } from "../lib/modes.js"
 import { ModeRack } from "./ModeRack.js"
-import { type FlowState, TokenFlow } from "./TokenFlow.js"
+import { type FlowState, Stage } from "./Stage.js"
+import { Verdict } from "./Verdict.js"
 import { IconSeal, IconSealBroken } from "./icons.js"
 import { Panel, Pill } from "./ui.js"
 
@@ -100,7 +101,7 @@ export function JwtDemo() {
       <StatusBar mode={mode} state={state} />
 
       <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <TokenFlow mode={mode} state={state} />
+        <Stage mode={mode} state={state} />
         <ModeRack
           mode={mode}
           onModeChange={setMode}
@@ -112,10 +113,14 @@ export function JwtDemo() {
         />
       </div>
 
-      <Panel title="この方式の要点">
-        <p className="text-xs leading-relaxed text-ink-soft">{MODE_COPY[mode].point}</p>
-        <p className="mt-1.5 text-xs leading-relaxed text-ink-faint">{MODE_COPY[mode].caveat}</p>
-      </Panel>
+      <div className="grid items-start gap-3 sm:grid-cols-2">
+        <Verdict state={state} />
+
+        <Panel title="この方式の要点">
+          <p className="text-xs leading-relaxed text-ink-soft">{MODE_COPY[mode].point}</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-faint">{MODE_COPY[mode].caveat}</p>
+        </Panel>
+      </div>
     </div>
   )
 }
