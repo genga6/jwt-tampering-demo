@@ -1,1 +1,236 @@
 @import "tailwindcss";
+
+/*
+ * 明るい盤面のための色と字。
+ *
+ * 黒とグレーは使わず、藍 (ink) と青紫みのある紙 (paper) を基準にする。
+ * JWT は「header / payload / signature の 3 片」でできているが、3 片を 3 色に塗り分ける
+ * ことはしない。色は「その部分がどういう状態か」だけを言う。意味を持つ色は 3 つ。
+ *
+ *   safe  … 署名で封がされている / 改ざんを検出できた
+ *   open  … Base64url なので誰でも読める（暗号化ではない）
+ *   alarm … 改ざんが素通りした / 権限が昇格した
+ *
+ * そのうえで header は accent（＝いま選んでいる方式が書かれている場所）、payload は open、
+ * signature は safe に対応する。色を見れば「読めるのはどこで、封はどこか」が分かる。
+ */
+@theme {
+  --color-ink: #1c1f3d;
+  --color-ink-soft: #565d8a;
+  --color-ink-faint: #8a90b8;
+  --color-paper: #eceafa;
+  --color-card: #ffffff;
+  --color-line: #c4c1e6;
+  --color-line-soft: #e1dff4;
+
+  --color-accent: #4b46c8;
+  --color-accent-soft: #e3e1ff;
+  --color-accent-deep: #332da2;
+
+  --color-safe: #0b8f66;
+  --color-safe-soft: #d4f2e4;
+  --color-open: #b46a06;
+  --color-open-soft: #fceecf;
+  --color-alarm: #cf3243;
+  --color-alarm-soft: #fcdfe2;
+
+  /* トークンそのものが主役なので、等幅の字を主役級に扱う。外部読み込みはしない。 */
+  --font-sans: "Hiragino Sans", "BIZ UDPGothic", "Yu Gothic UI", "Segoe UI", system-ui, sans-serif;
+  --font-mono: ui-monospace, "SFMono-Regular", Menlo, Consolas, "Noto Sans Mono", monospace;
+}
+
+@layer base {
+  html {
+    -webkit-text-size-adjust: 100%;
+  }
+
+  body {
+    background-color: var(--color-paper);
+    color: var(--color-ink);
+    font-family: var(--font-sans);
+    /* 盤面のうっすらした点。紙の上に札を置いてある感じを出す。 */
+    background-image: radial-gradient(circle, rgb(28 31 61 / 0.085) 1px, transparent 1.2px);
+    background-size: 20px 20px;
+  }
+
+  /* 数字や 16 進が縦に揃うところは等幅の数字にする。 */
+  code,
+  kbd,
+  pre,
+  samp {
+    font-variant-numeric: tabular-nums;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-accent);
+    outline-offset: 2px;
+  }
+
+  summary {
+    cursor: pointer;
+  }
+
+  summary::marker {
+    color: var(--color-ink-faint);
+  }
+}
+
+@layer components {
+  /* 盤面に置く板。厚みは影ではなく下辺の線で出す。 */
+  .panel {
+    background: var(--color-card);
+    border: 1.5px solid var(--color-line);
+    border-radius: 16px;
+    box-shadow: 0 2px 0 var(--color-line);
+  }
+
+  /* 押せるもの。押し込むと下辺が縮む。 */
+  .btn {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+    border-radius: 11px;
+    border: 1.5px solid var(--color-line);
+    background: var(--color-card);
+    color: var(--color-ink);
+    padding: 0.4rem 0.75rem;
+    font-size: 0.8125rem;
+    font-weight: 600;
+    box-shadow: 0 2px 0 var(--color-line);
+    transition: transform 0.06s, box-shadow 0.06s, background-color 0.12s, border-color 0.12s;
+  }
+
+  .btn:hover:not(:disabled) {
+    border-color: var(--color-ink-faint);
+  }
+
+  .btn:active:not(:disabled) {
+    transform: translateY(2px);
+    box-shadow: none;
+  }
+
+  .btn:disabled {
+    opacity: 0.4;
+    box-shadow: none;
+    transform: translateY(2px);
+  }
+
+  .btn-accent {
+    background: var(--color-accent);
+    border-color: var(--color-accent-deep);
+    color: #fff;
+    box-shadow: 0 2px 0 var(--color-accent-deep);
+  }
+
+  .btn-accent:hover:not(:disabled) {
+    background: var(--color-accent-deep);
+    border-color: var(--color-accent-deep);
+  }
+
+  .btn-accent:active:not(:disabled) {
+    box-shadow: none;
+  }
+
+  /* 状態を一目で出す小さな札。 */
+  .pill {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.25rem;
+    border-radius: 999px;
+    padding: 0.1rem 0.5rem;
+    font-size: 0.6875rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    border: 1.5px solid transparent;
+    white-space: nowrap;
+  }
+
+  /*
+   * トークンの 1 片（半券）。
+   *
+   * JWT は「.」で 3 つに切られた 1 枚の券で、切れ目のところに切り取り線がある。
+   * 署名の片だけが「封」で、それが無い券（alg:none）は端がちぎれたままになる。
+   */
+  .stub {
+    border: 1.5px solid;
+    border-radius: 10px;
+    padding: 0.35rem 0.55rem;
+    font-family: var(--font-mono);
+    font-size: 11px;
+    line-height: 1.55;
+    overflow-wrap: anywhere;
+  }
+
+  /* 片と片のあいだの切り取り線。「.」が置かれる場所。 */
+  .seam {
+    flex: none;
+    align-self: stretch;
+    width: 0;
+    border-left: 1.5px dashed var(--color-line);
+  }
+}
+
+/* 表示が切り替わったことが分かる、ごく短い立ち上がり。 */
+@keyframes rise-in {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+  to {
+    opacity: 1;
+    transform: none;
+  }
+}
+
+.rise-in {
+  animation: rise-in 0.28s ease-out;
+}
+
+/* 改ざんが素通りした枠を 2 回だけ光らせる。 */
+@keyframes alarm-flash {
+  0%,
+  100% {
+    box-shadow: 0 2px 0 var(--color-alarm);
+  }
+  50% {
+    box-shadow: 0 2px 0 var(--color-alarm), 0 0 0 5px rgb(207 50 67 / 0.18);
+  }
+}
+
+.alarm-flash {
+  animation: alarm-flash 0.9s ease-out 2;
+}
+
+/* 書き換えられた行に、一度だけ差す色。どこが変わったのかを目で拾わせる。 */
+@keyframes patched {
+  from {
+    background-color: rgb(207 50 67 / 0.22);
+  }
+  to {
+    background-color: rgb(207 50 67 / 0.08);
+  }
+}
+
+.patched {
+  animation: patched 1.1s ease-out;
+}
+
+/* 鍵を作っている間の脈打ち。 */
+@keyframes cranking {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+.cranking {
+  animation: cranking 3.2s linear infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .rise-in,
+  .alarm-flash,
+  .patched,
+  .cranking {
+    animation: none;
+  }
+}

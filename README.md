@@ -23,6 +23,12 @@ JOSE（[jose](https://github.com/panva/jose)）による署名で改ざんを検
 
 判定は全方式で「改ざんを検出できたか（〇 / ×）」に統一。
 
+画面は上から、いまの結末だけを出すステータスバー、①発行 → ②改ざん → ③検証 を 1 本に並べた盤面、
+その隣に置いた署名方式・鍵の設定、という並び。トークンは `header` / `payload` / `signature` の
+3 段の半券として描き、**鍵なしで読める場所（payload）と封がされている場所（signature）**を
+色で分けている。改ざん後のトークンでは、書き換えられた payload の行と、作り直せずに流用された
+署名の段が色で分かる。
+
 ## どんなケースに当てはまるか
 
 JWT は「トークンの**形式**」であり、次のような用途で広く使われる。いずれも
@@ -58,8 +64,14 @@ pnpm format    # biome フォーマット
 | `src/lib/base64url.ts` | Base64url エンコード/デコード（`Buffer` 非依存のブラウザ実装） |
 | `src/lib/jwt.ts` | 署名を検証しない素朴な JWT 分解/組み立て（＝脆弱な実装例） |
 | `src/lib/jose-crypto.ts` | JOSE による HS256 / RS256 の署名・検証・鍵生成 |
-| `src/components/JwtDemo.tsx` | 保護方式セレクタ付きのデモ本体（①発行→②改ざん→③検証） |
-| `src/components/ui.tsx` | 共通 UI 部品（バッジ・トークン表示・ステップ見出しなど） |
+| `src/lib/modes.ts` | 署名方式ごとの表示文（画面の文章はここに集約） |
+| `src/components/JwtDemo.tsx` | デモ本体（状態の計算・ステータスバー・画面の組み立て） |
+| `src/components/TokenFlow.tsx` | 盤面（①発行 → ②改ざん → ③検証 と判定） |
+| `src/components/Token.tsx` | トークンの 3 段表示と、payload の書き換え箇所の差分表示 |
+| `src/components/ModeRack.tsx` | 署名方式のセレクタと、シークレット / 鍵ペアの設定 |
+| `src/components/ui.tsx` | 共通 UI 部品（板・ボタン・札・切り替え・折りたたみ） |
+| `src/components/icons.tsx` | 画面で使う絵記号（自前の SVG。絵文字は使わない） |
+| `src/index.css` | 配色・書体・盤面の見た目（Tailwind のテーマと共通クラス） |
 | `test/jwt.test.ts` | 「改ざんが検証で弾かれる」ことの自動テスト |
 
 ## 技術スタック
