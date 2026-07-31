@@ -7,6 +7,11 @@
  *   - RS256 (非対称鍵): 秘密鍵で署名・公開鍵で検証 → 検出できる (〇)
  *
  * 署名/検証/鍵生成はすべてブラウザの Web Crypto 上(jose)で実行する。
+ *
+ * 画面は 3 段:
+ *   ステータスバー   … いまの結末だけを 1 行で
+ *   盤面 ＋ 設定     … 券が渡っていく様子と、いじる場所を隣に置く
+ *   結果 ＋ 要点     … 2 枚を照合した判定と、この方式について言えること
  */
 import { useEffect, useState } from "react"
 import {
@@ -18,44 +23,21 @@ import {
   verifyRS256,
 } from "../lib/jose-crypto.js"
 import { buildUnsignedToken, tamperClaims } from "../lib/jwt.js"
-import { Button, CodePanel, JwtWire, StepLabel, VerdictRow } from "./ui.js"
-
-type Mode = "none" | "HS256" | "RS256"
-
-const MODES: { key: Mode; label: string }[] = [
-  { key: "none", label: "なし (alg:none)" },
-  { key: "HS256", label: "HS256 (対称鍵)" },
-  { key: "RS256", label: "RS256 (公開鍵)" },
-]
+import { MODE_COPY, type Mode } from "../lib/modes.js"
+import { ModeRack } from "./ModeRack.js"
+import { type FlowState, Stage } from "./Stage.js"
+import { Verdict } from "./Verdict.js"
+import { IconSeal, IconSealBroken } from "./icons.js"
+import { Panel, Pill } from "./ui.js"
 
 const BASE_PAYLOAD = { sub: "1234567890", name: "Alice", role: "user" }
-
-const NOTES: Record<Mode, string> = {
-  none:
-    "alg:none を許容する（または署名を検証しない）サーバーは、改ざんを検出できない。\n" +
-    "攻撃者は署名付きトークンを alg:none に格下げしてこの状態を作り出す。\n" +
-    "対策: alg を allowlist で固定して none を禁止し、必ず署名検証する。",
-  HS256:
-    "共有シークレットの HMAC で署名。payload を書き換えると HMAC が一致せず検出できる。\n" +
-    "ただし検証側とシークレットを共有する必要があり、鍵が漏れると偽造も可能になる。",
-  RS256:
-    "秘密鍵で署名し、公開鍵で検証する。公開鍵を配っても秘密鍵なしには偽造できない。\n" +
-    "第三者やマイクロサービスへ JWT を配布する用途に向く。",
-}
-
-interface DemoState {
-  issued: string
-  forged: string
-  legitOk: boolean
-  tamperedDetected: boolean
-}
 
 export function JwtDemo() {
   const [mode, setMode] = useState<Mode>("none")
   const [secret, setSecret] = useState("super-secret-shared-key")
   const [keys, setKeys] = useState<RsaKeyPair | null>(null)
   const [keyBusy, setKeyBusy] = useState(false)
-  const [state, setState] = useState<DemoState | null>(null)
+  const [state, setState] = useState<FlowState | null>(null)
 
   // RS256 を選んだら鍵ペアを自動生成する（未生成のときだけ）。
   useEffect(() => {
@@ -73,7 +55,7 @@ export function JwtDemo() {
       const admin = { ...BASE_PAYLOAD, role: "admin" }
       if (mode === "none") {
         const header = { alg: "none", typ: "JWT" }
-        const next: DemoState = {
+        const next: FlowState = {
           issued: buildUnsignedToken(header, BASE_PAYLOAD),
           forged: buildUnsignedToken(header, admin),
           legitOk: true, // 署名を見ないので正規トークンは受理される
@@ -115,103 +97,81 @@ export function JwtDemo() {
   }, [mode, secret, keys])
 
   return (
-    <section className="rounded-2xl bg-slate-900/60 p-6 ring-1 ring-slate-700/60 backdrop-blur">
-      {/* 保護方式セレクタ */}
-      <div className="mb-5">
-        <div className="mb-2 text-xs font-semibold uppercase tracking-wide text-slate-400">
-          サーバーの署名方式
-        </div>
-        <div className="inline-flex rounded-lg bg-slate-950/70 p-1 ring-1 ring-slate-700">
-          {MODES.map((m) => (
-            <button
-              key={m.key}
-              type="button"
-              onClick={() => setMode(m.key)}
-              className={`rounded-md px-4 py-1.5 text-sm font-medium transition ${
-                mode === m.key
-                  ? "bg-indigo-500/70 text-indigo-50"
-                  : "text-slate-400 hover:text-slate-200"
-              }`}
-            >
-              {m.label}
-            </button>
-          ))}
-        </div>
+    <div className="space-y-3">
+      <StatusBar mode={mode} state={state} />
+
+      <div className="grid items-start gap-3 lg:grid-cols-[minmax(0,1fr)_18rem]">
+        <Stage mode={mode} state={state} />
+        <ModeRack
+          mode={mode}
+          onModeChange={setMode}
+          secret={secret}
+          onSecretChange={setSecret}
+          keys={keys}
+          keyBusy={keyBusy}
+          onRegenerateKeys={() => setKeys(null)}
+        />
       </div>
 
-      {/* 方式ごとの設定 */}
-      {mode === "HS256" && (
-        <label className="mb-5 block">
-          <span className="text-xs text-slate-400">署名 &amp; 検証に使う共有シークレット</span>
-          <input
-            value={secret}
-            onChange={(e) => setSecret(e.target.value)}
-            className="mt-1 w-full max-w-md rounded-lg bg-slate-950/70 p-2.5 font-mono text-sm text-emerald-200 ring-1 ring-slate-700 focus:outline-none focus:ring-2 focus:ring-indigo-500"
-          />
-        </label>
-      )}
-      {mode === "RS256" && (
-        <div className="mb-5 space-y-3">
-          <div className="flex items-center gap-3">
-            <Button
-              onClick={() => {
-                setKeys(null)
-              }}
-              tone="default"
-              disabled={keyBusy}
-            >
-              {keyBusy ? "生成中…" : "鍵ペアを再生成"}
-            </Button>
-            <span className="text-xs text-slate-400">秘密鍵で署名・公開鍵で検証する</span>
-          </div>
-          {keys && (
-            <div className="grid gap-3 lg:grid-cols-2">
-              <CodePanel label="公開鍵 (SPKI PEM)" value={keys.publicPem.trim()} />
-              <CodePanel label="秘密鍵 (PKCS#8 PEM)" value={keys.privatePem.trim()} />
-            </div>
-          )}
-        </div>
-      )}
+      <div className="grid items-start gap-3 sm:grid-cols-2">
+        <Verdict state={state} />
 
-      {/* ① 発行 */}
-      <section className="space-y-2">
-        <StepLabel n="①">
-          サーバーが発行した正規トークン（role=user
-          {mode === "none" ? "・署名なし" : "・署名あり"}）
-        </StepLabel>
-        {state ? <JwtWire token={state.issued} /> : <p className="text-sm text-slate-500">—</p>}
-      </section>
+        <Panel title="この方式の要点">
+          <p className="text-xs leading-relaxed text-ink-soft">{MODE_COPY[mode].point}</p>
+          <p className="mt-1.5 text-xs leading-relaxed text-ink-faint">{MODE_COPY[mode].caveat}</p>
+        </Panel>
+      </div>
+    </div>
+  )
+}
 
-      {/* ② 改ざん */}
-      <section className="mt-6 space-y-2">
-        <StepLabel n="②">
-          攻撃者が payload を改ざん（<span className="text-rose-300">role: user → admin</span>）
-        </StepLabel>
-        {state ? <JwtWire token={state.forged} /> : <p className="text-sm text-slate-500">—</p>}
-        {mode !== "none" && (
-          <p className="text-xs text-slate-500">
-            攻撃者は鍵を持たないため署名を作り直せず、元の署名を流用するしかない。
-          </p>
+/**
+ * いまの結末を 1 段で。
+ *
+ * 「封がされているか」「改ざんを検出できたか」「権限が昇格したか」の 3 つだけ。
+ * 方式を切り替えたときにここだけ見ていれば、結論の入れ替わりが分かる。
+ */
+function StatusBar({ mode, state }: { mode: Mode; state: FlowState | null }) {
+  const sealed = mode !== "none"
+  const detected = state?.tamperedDetected ?? false
+
+  return (
+    <div className="panel flex flex-wrap items-center gap-x-4 gap-y-2 px-3.5 py-2.5">
+      <span className="flex items-center gap-1.5">
+        <span className={sealed ? "text-safe" : "text-alarm"}>
+          {sealed ? <IconSeal size={18} /> : <IconSealBroken size={18} />}
+        </span>
+        <span className="text-xs font-bold">{sealed ? "署名あり" : "署名なし"}</span>
+        <span className="font-mono text-[11px] text-ink-faint">{MODE_COPY[mode].alg}</span>
+      </span>
+
+      <span className="flex items-center gap-1.5">
+        <span className="text-[10px] font-bold tracking-wider text-ink-faint uppercase">
+          改ざん
+        </span>
+        {state === null ? (
+          <Pill tone="muted">計算中…</Pill>
+        ) : detected ? (
+          <Pill tone="safe">検出できた</Pill>
+        ) : (
+          <Pill tone="alarm">素通りした</Pill>
         )}
-      </section>
+      </span>
 
-      {/* ③ 検証 */}
-      <section className="mt-6 space-y-3 border-t border-slate-700/60 pt-4">
-        <StepLabel n="③">この方式で検証した結果（改ざんを検出できたか）</StepLabel>
-        <div className="divide-y divide-slate-800 rounded-lg bg-slate-950/40 ring-1 ring-slate-800">
-          <VerdictRow label="正規トークン" ok={state?.legitOk ?? false}>
-            {state ? (state.legitOk ? "検証OK → 受理" : "想定外の検証失敗") : "—"}
-          </VerdictRow>
-          <VerdictRow label="改ざんトークン" ok={state?.tamperedDetected ?? false}>
-            {state
-              ? state.tamperedDetected
-                ? "改ざんを検出 → 拒否"
-                : "検出できず → role=admin を受理（権限昇格）"
-              : "—"}
-          </VerdictRow>
-        </div>
-        <CodePanel label="ポイント" value={NOTES[mode]} />
-      </section>
-    </section>
+      <span className="flex items-center gap-1.5">
+        <span className="text-[10px] font-bold tracking-wider text-ink-faint uppercase">
+          権限昇格
+        </span>
+        {state === null ? (
+          <Pill tone="muted">—</Pill>
+        ) : detected ? (
+          <Pill tone="safe">成立しない</Pill>
+        ) : (
+          <Pill tone="alarm">成立した</Pill>
+        )}
+      </span>
+
+      <span className="ml-auto font-mono text-[11px] text-ink-faint">role: user → admin</span>
+    </div>
   )
 }
